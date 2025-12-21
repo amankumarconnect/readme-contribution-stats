@@ -107,7 +107,7 @@ export async function fetchRepoCard(request, env) {
 }
 
 function generateCardSvg(repos) {
-	const cardWidth = 350;
+	const cardWidth = 400;
 	const cardHeight = 50;
 	const gap = 10;
 	const columns = 2;
