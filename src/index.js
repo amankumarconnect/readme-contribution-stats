@@ -140,13 +140,13 @@ function generateCardSvg(repos) {
         <image x="10" y="8" width="34" height="34" href="data:image/png;base64,${repo.base64}" clip-path="inset(0% round 50%)" />
         
         <text x="55" y="20" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-weight="600" font-size="14" fill="#0366d6" class="repo-name">
-          ${repo.owner}/${repo.name}
+          ${repo.name}
         </text>
 
         <g transform="translate(55, 38)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#586069" class="stats-text">
           
           <g transform="translate(0, 0)"> 
-             <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.719-4.192-3.046-2.97a.75.75 0 01.416-1.28l4.21-.612L7.327.668A.75.75 0 018 .25z" 
+            <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.719-4.192-3.046-2.97a.75.75 0 01.416-1.28l4.21-.612L7.327.668A.75.75 0 018 .25z" 
               transform="translate(0, -7) scale(0.8)" />
             <text x="16" y="0" dominant-baseline="middle">${kFormatter(repo.stars)}</text>
           </g>
