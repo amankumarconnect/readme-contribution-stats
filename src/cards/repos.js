@@ -25,7 +25,7 @@ export async function fetchRepoCard(request, env) {
 		Accept: 'application/vnd.github.v3+json',
 	};
 
-	const query = `is:pr is:merged is:public author:${username} -user:${username}`;
+	const query = `is:pr is:merged is:public author:${username} -user:${username} sort:created-desc`;
 	const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
 
 	try {
@@ -37,7 +37,8 @@ export async function fetchRepoCard(request, env) {
 
 		for (const item of searchData.items) {
 			const repoUrl = item.repository_url;
-			const repoFullName = repoUrl.split('/repos/')[1];
+			// Safer parsing of repo URL
+			const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
 			const [owner, name] = repoFullName.split('/');
 
 			if (owner.toLowerCase() === username.toLowerCase()) continue;
@@ -67,6 +68,7 @@ export async function fetchRepoCard(request, env) {
 		}
 
 		// Limit to 40 to avoid subrequest limits (40 details + ~6 avatars < 50)
+		// We fetch more than the requested limit to ensure we have enough candidates after filtering/sorting
 		let reposToCheck = Array.from(repoMap.values()).slice(0, 40);
 
 		const detailsPromises = reposToCheck.map(async (repo) => {
