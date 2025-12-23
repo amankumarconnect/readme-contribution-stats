@@ -1,149 +1,159 @@
 import { makeErrorSvg, kFormatter } from '../common/utils.js';
 
 export async function fetchRepoCard(request, env) {
-  const url = new URL(request.url);
-  const username = url.searchParams.get("username");
-  const title = url.searchParams.get("title") || "Top Contributions";
+	const url = new URL(request.url);
+	const username = url.searchParams.get('username');
+	const title = url.searchParams.get('title') || 'Top Open Source contributions';
+	const limit = parseInt(url.searchParams.get('limit')) || 6;
+	const sort = url.searchParams.get('sort');
 
-  if (!username) {
-    return new Response(makeErrorSvg("Missing parameter: ?username=yourname"), {
-      headers: { "Content-Type": "image/svg+xml" }
-    });
-  }
+	if (!username) {
+		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
+			headers: { 'Content-Type': 'image/svg+xml' },
+		});
+	}
 
-  const headers = {
-    "User-Agent": "readme-contribution-stats",
-    "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
-    "Accept": "application/vnd.github.v3+json"
-  };
+	const headers = {
+		'User-Agent': 'readme-contribution-stats',
+		Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+		Accept: 'application/vnd.github.v3+json',
+	};
 
-  const query = `is:pr is:merged is:public author:${username} -user:${username}`;
-  const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
+	const query = `is:pr is:merged is:public author:${username} -user:${username}`;
+	const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
 
-  try {
-    const searchRes = await fetch(searchUrl, { headers });
-    if (!searchRes.ok) throw new Error(`GitHub API Error: ${searchRes.status}`);
-    const searchData = await searchRes.json();
+	try {
+		const searchRes = await fetch(searchUrl, { headers });
+		if (!searchRes.ok) throw new Error(`GitHub API Error: ${searchRes.status}`);
+		const searchData = await searchRes.json();
 
-    const repoMap = new Map();
+		const repoMap = new Map();
 
-    for (const item of searchData.items) {
-      const repoUrl = item.repository_url;
-      const repoFullName = repoUrl.split("/repos/")[1]; 
-      const [owner, name] = repoFullName.split("/");
+		for (const item of searchData.items) {
+			const repoUrl = item.repository_url;
+			const repoFullName = repoUrl.split('/repos/')[1];
+			const [owner, name] = repoFullName.split('/');
 
-      if (owner.toLowerCase() === username.toLowerCase()) continue;
+			if (owner.toLowerCase() === username.toLowerCase()) continue;
 
-      let type = "Code"; 
-      const textToCheck = (item.title + (item.labels || []).map(l => l.name).join(" ")).toLowerCase();
-      
-      if (textToCheck.includes("doc") || textToCheck.includes("readme") || textToCheck.includes("typo") || textToCheck.includes("edit")) {
-        type = "Docs";
-      }
+			let type = 'Code';
+			const textToCheck = (item.title + (item.labels || []).map((l) => l.name).join(' ')).toLowerCase();
 
-      if (!repoMap.has(repoFullName)) {
-        repoMap.set(repoFullName, {
-          fullName: repoFullName,
-          name: name,
-          owner: owner,
-          apiUrl: repoUrl,
-          prCount: 1,
-          types: new Set([type]), 
-          ownerAvatar: `https://github.com/${owner}.png?size=64`
-        });
-      } else {
-        const repo = repoMap.get(repoFullName);
-        repo.prCount += 1;
-        repo.types.add(type);
-      }
-    }
+			if (textToCheck.includes('doc') || textToCheck.includes('readme') || textToCheck.includes('typo') || textToCheck.includes('edit')) {
+				type = 'Docs';
+			}
 
-    let reposToCheck = Array.from(repoMap.values()).slice(0, 50);
+			if (!repoMap.has(repoFullName)) {
+				repoMap.set(repoFullName, {
+					fullName: repoFullName,
+					name: name,
+					owner: owner,
+					apiUrl: repoUrl,
+					prCount: 1,
+					types: new Set([type]),
+					ownerAvatar: `https://github.com/${owner}.png?size=64`,
+				});
+			} else {
+				const repo = repoMap.get(repoFullName);
+				repo.prCount += 1;
+				repo.types.add(type);
+			}
+		}
 
-    const detailsPromises = reposToCheck.map(async (repo) => {
-      try {
-        const res = await fetch(repo.apiUrl, { headers });
-        if(!res.ok) return null;
-        const data = await res.json();
-        
-        const imgRes = await fetch(repo.ownerAvatar);
-        const imgBuf = await imgRes.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)));
+		let reposToCheck = Array.from(repoMap.values()).slice(0, 50);
 
-        const typeArray = Array.from(repo.types);
-        let finalType = typeArray[0];
-        if (typeArray.includes("Code") && typeArray.includes("Docs")) finalType = "Code + Docs";
-        
-        return {
-          ...repo,
-          stars: data.stargazers_count,
-          base64: base64,
-          contributionType: finalType
-        };
-      } catch (e) {
-        return null;
-      }
-    });
+		const detailsPromises = reposToCheck.map(async (repo) => {
+			try {
+				const res = await fetch(repo.apiUrl, { headers });
+				if (!res.ok) return null;
+				const data = await res.json();
 
-    let enrichedRepos = (await Promise.all(detailsPromises)).filter(r => r !== null);
+				const imgRes = await fetch(repo.ownerAvatar);
+				const imgBuf = await imgRes.arrayBuffer();
+				const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)));
 
-    enrichedRepos.sort((a, b) => {
-      const starDiff = b.stars - a.stars;
-      if (starDiff !== 0) return starDiff;
-      return b.prCount - a.prCount;
-    });
-    
-    enrichedRepos = enrichedRepos.slice(0, 6); 
+				const typeArray = Array.from(repo.types);
+				let finalType = typeArray[0];
+				if (typeArray.includes('Code') && typeArray.includes('Docs')) finalType = 'Code + Docs';
 
-    if (enrichedRepos.length === 0) {
-      return new Response(makeErrorSvg("No external contributions found"), { headers: { "Content-Type": "image/svg+xml" } });
-    }
+				return {
+					...repo,
+					stars: data.stargazers_count,
+					base64: base64,
+					contributionType: finalType,
+				};
+			} catch (e) {
+				return null;
+			}
+		});
 
-    const svg = generateCardSvg(enrichedRepos, title);
+		let enrichedRepos = (await Promise.all(detailsPromises)).filter((r) => r !== null);
 
-    return new Response(svg, {
-      headers: {
-        "Content-Type": "image/svg+xml",
-        "Cache-Control": "public, max-age=14400"
-      }
-    });
+		enrichedRepos.sort((a, b) => {
+			if (sort === 'stars') {
+				return b.stars - a.stars;
+			}
+			if (sort === 'contributions') {
+				return b.prCount - a.prCount;
+			}
+			const starDiff = b.stars - a.stars;
+			if (starDiff !== 0) return starDiff;
+			return b.prCount - a.prCount;
+		});
 
-  } catch (err) {
-    return new Response(makeErrorSvg(err.message), { status: 500 });
-  }
+		enrichedRepos = enrichedRepos.slice(0, limit);
+
+		if (enrichedRepos.length === 0) {
+			return new Response(makeErrorSvg('No external contributions found'), { headers: { 'Content-Type': 'image/svg+xml' } });
+		}
+
+		const svg = generateCardSvg(enrichedRepos, title);
+
+		return new Response(svg, {
+			headers: {
+				'Content-Type': 'image/svg+xml',
+				'Cache-Control': 'public, max-age=14400',
+			},
+		});
+	} catch (err) {
+		return new Response(makeErrorSvg(err.message), { status: 500 });
+	}
 }
 
 function generateCardSvg(repos, title) {
-  const cardWidth = 400; 
-  const cardHeight = 60; 
-  const gap = 15;
-  const columns = 2; 
-  const padding = 20;
-  const headerHeight = 40; 
+	const cardWidth = 400;
+	const cardHeight = 60;
+	const gap = 15;
+	const columns = 2;
+	const padding = 20;
+	const headerHeight = 40;
 
-  const totalWidth = (columns * cardWidth) + ((columns - 1) * gap) + (padding * 2);
-  const rows = Math.ceil(repos.length / columns);
-  const totalHeight = headerHeight + (rows * cardHeight) + ((rows - 1) * gap) + (padding * 2);
+	const totalWidth = columns * cardWidth + (columns - 1) * gap + padding * 2;
+	const rows = Math.ceil(repos.length / columns);
+	const totalHeight = headerHeight + rows * cardHeight + (rows - 1) * gap + padding * 2;
 
-  const iconCode = `<path d="M4.72 3.22a.75.75 0 011.06 1.06L2.06 8l3.72 3.72a.75.75 0 11-1.06 1.06L.47 8.53a.75.75 0 010-1.06l4.25-4.25zm11.56 0a.75.75 0 10-1.06 1.06L18.94 8l-3.72 3.72a.75.75 0 101.06 1.06l4.25-4.25a.75.75 0 000-1.06l-4.25-4.25z" transform="translate(0, -6) scale(0.7)"/>`;
-  const iconDocs = `<path d="M0 1.75A.75.75 0 01.75 1h4.253c1.227 0 2.317.59 3 1.501A3.744 3.744 0 0111.006 1h4.245a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75h-4.507a2.25 2.25 0 00-1.591.659l-.622.621a.75.75 0 01-1.06 0l-.622-.621A2.25 2.25 0 005.258 13H.75a.75.75 0 01-.75-.75V1.75zm8.755 3a2.25 2.25 0 012.25-2.25H14.5v9h-3.757c-.71 0-1.4.201-1.992.572l.004-7.322zm-1.504 7.324l.004-5.073-.002-2.253A2.25 2.25 0 005.003 2.5H1.5v9h3.757a3.676 3.676 0 011.997.574z" transform="translate(0, -6) scale(0.7)"/>`;
+	const iconCode = `<path d="M4.72 3.22a.75.75 0 011.06 1.06L2.06 8l3.72 3.72a.75.75 0 11-1.06 1.06L.47 8.53a.75.75 0 010-1.06l4.25-4.25zm11.56 0a.75.75 0 10-1.06 1.06L18.94 8l-3.72 3.72a.75.75 0 101.06 1.06l4.25-4.25a.75.75 0 000-1.06l-4.25-4.25z" transform="translate(0, -6) scale(0.7)"/>`;
+	const iconDocs = `<path d="M0 1.75A.75.75 0 01.75 1h4.253c1.227 0 2.317.59 3 1.501A3.744 3.744 0 0111.006 1h4.245a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75h-4.507a2.25 2.25 0 00-1.591.659l-.622.621a.75.75 0 01-1.06 0l-.622-.621A2.25 2.25 0 005.258 13H.75a.75.75 0 01-.75-.75V1.75zm8.755 3a2.25 2.25 0 012.25-2.25H14.5v9h-3.757c-.71 0-1.4.201-1.992.572l.004-7.322zm-1.504 7.324l.004-5.073-.002-2.253A2.25 2.25 0 005.003 2.5H1.5v9h3.757a3.676 3.676 0 011.997.574z" transform="translate(0, -6) scale(0.7)"/>`;
 
-  let content = repos.map((repo, i) => {
-    const col = i % columns;
-    const row = Math.floor(i / columns);
-    const x = padding + (col * (cardWidth + gap));
-    const y = headerHeight + padding + (row * (cardHeight + gap));
+	let content = repos
+		.map((repo, i) => {
+			const col = i % columns;
+			const row = Math.floor(i / columns);
+			const x = padding + col * (cardWidth + gap);
+			const y = headerHeight + padding + row * (cardHeight + gap);
 
-    let typeIcon = iconCode;
-    if (repo.contributionType === "Docs") typeIcon = iconDocs;
-    
-    return `
+			let typeIcon = iconCode;
+			if (repo.contributionType === 'Docs') typeIcon = iconDocs;
+
+			return `
       <g transform="translate(${x}, ${y})">
         <rect width="${cardWidth}" height="${cardHeight}" rx="8" fill="#ffffff" stroke="#e1e4e8" class="card-bg" />
         
         <image x="15" y="13" width="34" height="34" href="data:image/png;base64,${repo.base64}" clip-path="inset(0% round 50%)" />
         
-        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" fill="#0969da" class="repo-name">${repo.name}</text>
+        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" fill="#0969da" class="repo-name">${
+					repo.name
+				}</text>
 
         <g transform="translate(60, 44)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" fill="#586069" class="stats-text">
            
@@ -164,9 +174,10 @@ function generateCardSvg(repos, title) {
         </g>
       </g>
     `;
-  }).join('');
+		})
+		.join('');
 
-  return `
+	return `
     <svg width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg">
       <style>
         .card-bg { fill: #ffffff; stroke: #e1e4e8; }
