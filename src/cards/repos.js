@@ -66,7 +66,8 @@ export async function fetchRepoCard(request, env) {
 			}
 		}
 
-		let reposToCheck = Array.from(repoMap.values()).slice(0, 50);
+		// Limit to 40 to avoid subrequest limits (40 details + ~6 avatars < 50)
+		let reposToCheck = Array.from(repoMap.values()).slice(0, 40);
 
 		const detailsPromises = reposToCheck.map(async (repo) => {
 			try {
@@ -74,9 +75,7 @@ export async function fetchRepoCard(request, env) {
 				if (!res.ok) return null;
 				const data = await res.json();
 
-				const imgRes = await fetch(repo.ownerAvatar);
-				const imgBuf = await imgRes.arrayBuffer();
-				const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)));
+				// Avatar fetching moved to after sorting/slicing to save requests
 
 				const typeArray = Array.from(repo.types);
 				let finalType = typeArray[0];
@@ -85,7 +84,6 @@ export async function fetchRepoCard(request, env) {
 				return {
 					...repo,
 					stars: data.stargazers_count,
-					base64: base64,
 					contributionType: finalType,
 				};
 			} catch (e) {
@@ -108,6 +106,20 @@ export async function fetchRepoCard(request, env) {
 		});
 
 		enrichedRepos = enrichedRepos.slice(0, limit);
+
+		// Fetch avatars only for the final list
+		const avatarPromises = enrichedRepos.map(async (repo) => {
+			try {
+				const imgRes = await fetch(repo.ownerAvatar);
+				const imgBuf = await imgRes.arrayBuffer();
+				const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)));
+				return { ...repo, base64 };
+			} catch (e) {
+				return { ...repo, base64: '' };
+			}
+		});
+
+		enrichedRepos = await Promise.all(avatarPromises);
 
 		if (enrichedRepos.length === 0) {
 			return new Response(makeErrorSvg('No external contributions found'), { headers: { 'Content-Type': 'image/svg+xml' } });

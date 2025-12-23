@@ -11,7 +11,7 @@ This tool generates a dynamic SVG card showing the repositories where you have m
 Copy and paste the following code into your `README.md`:
 
 ```markdown
-[![Repo Stats](https://readme-contribution-stats.aman-kumar-connect.workers.dev/type=repos&username=YOUR_USERNAME&limit=6)](https://github.com/amankumarconnect/readme-contribution-stats)
+[![Contribution Stats](https://readme-contribution-stats.aman-kumar-connect.workers.dev/type=repos&username=YOUR_USERNAME&limit=6)](https://github.com/amankumarconnect/readme-contribution-stats)
 ```
 
 ### Configuration
