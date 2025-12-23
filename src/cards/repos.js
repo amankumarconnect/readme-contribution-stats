@@ -1,9 +1,9 @@
-import { makeErrorSvg, kFormatter } from '../common/utils.js';
+import { makeErrorSvg, kFormatter, fetchUser, escapeXml } from '../common/utils.js';
 
 export async function fetchRepoCard(request, env) {
 	const url = new URL(request.url);
 	const username = url.searchParams.get('username');
-	const title = url.searchParams.get('title') || 'Top Open Source contributions';
+	let title = url.searchParams.get('title');
 	const limit = parseInt(url.searchParams.get('limit')) || 6;
 	const sort = url.searchParams.get('sort');
 
@@ -11,6 +11,12 @@ export async function fetchRepoCard(request, env) {
 		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
 			headers: { 'Content-Type': 'image/svg+xml' },
 		});
+	}
+
+	if (!title) {
+		const user = await fetchUser(username, env);
+		const name = user && user.name ? user.name.split(' ')[0] : username;
+		title = `${name}'s Open Source Contributions`;
 	}
 
 	const headers = {
@@ -151,15 +157,15 @@ function generateCardSvg(repos, title) {
         
         <image x="15" y="13" width="34" height="34" href="data:image/png;base64,${repo.base64}" clip-path="inset(0% round 50%)" />
         
-        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" fill="#0969da" class="repo-name">${
+        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" fill="#0969da" class="repo-name">${escapeXml(
 					repo.name
-				}</text>
+				)}</text>
 
         <g transform="translate(60, 44)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" fill="#586069" class="stats-text">
            
            <g transform="translate(0, 0)">
               ${typeIcon}
-              <text x="16" y="0" dominant-baseline="middle">${repo.contributionType}</text>
+              <text x="16" y="0" dominant-baseline="middle">${escapeXml(repo.contributionType)}</text>
            </g>
 
            <g transform="translate(100, 0)">
@@ -183,14 +189,13 @@ function generateCardSvg(repos, title) {
         .card-bg { fill: #ffffff; stroke: #e1e4e8; }
         .repo-name { fill: #0969da; }
         .stats-text { fill: #586069; }
-        .title { fill: #24292f; }
+        .title { fill: #08872B; }
         path { fill: #586069; }
         
         @media (prefers-color-scheme: dark) {
           .card-bg { fill: #0d1117; stroke: #30363d; }
           .repo-name { fill: #58a6ff; }
           .stats-text { fill: #8b949e; }
-          .title { fill: #c9d1d9; }
           path { fill: #8b949e; }
         }
         
@@ -199,7 +204,9 @@ function generateCardSvg(repos, title) {
       </style>
 
       <g transform="translate(25, 30)">
-        <text class="title fade-in" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="bold" font-size="22">${title}</text>
+        <text class="title fade-in" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="bold" font-size="22">${escapeXml(
+					title
+				)}</text>
       </g>
 
       ${content}
