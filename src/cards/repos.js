@@ -6,6 +6,8 @@ export async function fetchRepoCard(request, env) {
 	let title = url.searchParams.get('title');
 	const limit = parseInt(url.searchParams.get('limit')) || 6;
 	const sort = url.searchParams.get('sort');
+	const excludeParam = url.searchParams.get('exclude');
+	const excludeList = excludeParam ? excludeParam.split(',').map(e => e.trim().toLowerCase()) : [];
 
 	if (!username) {
 		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
@@ -40,6 +42,12 @@ export async function fetchRepoCard(request, env) {
 			// Safer parsing of repo URL
 			const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
 			const [owner, name] = repoFullName.split('/');
+
+			// Exclude if in excludeList (by name or fullName)
+			if (
+				excludeList.includes(name.toLowerCase()) ||
+				excludeList.includes(repoFullName.toLowerCase())
+			) continue;
 
 			if (owner.toLowerCase() === username.toLowerCase()) continue;
 
