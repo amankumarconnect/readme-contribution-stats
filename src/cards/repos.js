@@ -1,11 +1,27 @@
 import { makeErrorSvg, kFormatter, fetchUser, escapeXml } from '../common/utils.js';
 
+/**
+ * Generate an SVG card summarizing a user's external repository contributions.
+ *
+ * Parses query parameters from the incoming request (username required; optional title, limit, sort, exclude),
+ * queries GitHub REST and GraphQL APIs to collect merged PR counts, star counts, and owner avatars,
+ * applies exclusions and sorting, fetches avatar images as base64, and renders an SVG card via generateCardSvg.
+ *
+ * @param {Request} request - Incoming HTTP request whose URL provides query parameters:
+ *                            `username` (required), `title` (optional), `limit` (optional, defaults to 6),
+ *                            `sort` (optional; "stars" or "contributions"), and `exclude` (optional CSV of repo names or full names).
+ * @param {Object} env - Environment bindings containing `GITHUB_TOKEN` used for GitHub API requests.
+ * @returns {Response} An HTTP Response whose body is SVG markup. On success the SVG card is returned with Content-Type "image/svg+xml"
+ *                     and caching headers; on error an error SVG is returned (unexpected errors produce a 500 Response).
+ */
 export async function fetchRepoCard(request, env) {
 	const url = new URL(request.url);
 	const username = url.searchParams.get('username');
 	let title = url.searchParams.get('title');
 	const limit = parseInt(url.searchParams.get('limit')) || 6;
 	const sort = url.searchParams.get('sort');
+	const excludeParam = url.searchParams.get('exclude');
+	const excludeList = excludeParam ? excludeParam.split(',').map(e => e.trim().toLowerCase()) : [];
 
 	if (!username) {
 		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
@@ -40,6 +56,12 @@ export async function fetchRepoCard(request, env) {
 			// Safer parsing of repo URL
 			const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
 			const [owner, name] = repoFullName.split('/');
+
+			// Exclude if in excludeList (by name or fullName)
+			if (
+				excludeList.includes(name.toLowerCase()) ||
+				excludeList.includes(repoFullName.toLowerCase())
+			) continue;
 
 			if (owner.toLowerCase() === username.toLowerCase()) continue;
 
