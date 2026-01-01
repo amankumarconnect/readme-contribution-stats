@@ -18,6 +18,8 @@ Copy and paste the following code into your `README.md`:
 
 1.  **Username**: Replace `YOUR_USERNAME` with your GitHub username.
 
+2.  **Sort**: You can add `&sort=contributions` to sort by the number of PRs. The default is `&sort=stars`.
+
 3.  **Exclude**: You can add `&exclude=repo1,repo2,owner/repo3` to hide specific repositories from the card. This accepts a comma-separated list of repository names or full repository paths.
 
 Example usage:
