@@ -21,6 +21,7 @@ export async function fetchRepoCard(request, env) {
 	const limit = parseInt(url.searchParams.get('limit')) || 6;
 	const sort = url.searchParams.get('sort');
 	const excludeParam = url.searchParams.get('exclude');
+	const transparent = url.searchParams.get('transparent') === 'true';
 	const excludeList = excludeParam ? excludeParam.split(',').map(e => e.trim().toLowerCase()) : [];
 
 	if (!username) {
@@ -178,7 +179,7 @@ export async function fetchRepoCard(request, env) {
 			return new Response(makeErrorSvg('No external contributions found'), { headers: { 'Content-Type': 'image/svg+xml' } });
 		}
 
-		const svg = generateCardSvg(enrichedRepos, title);
+		const svg = generateCardSvg(enrichedRepos, title, transparent);
 
 		return new Response(svg, {
 			headers: {
@@ -191,7 +192,7 @@ export async function fetchRepoCard(request, env) {
 	}
 }
 
-function generateCardSvg(repos, title) {
+function generateCardSvg(repos, title, transparent) {
 	const cardWidth = 400;
 	const cardHeight = 60;
 	const gap = 15;
@@ -206,6 +207,11 @@ function generateCardSvg(repos, title) {
 	const iconCode = `<path d="M4.72 3.22a.75.75 0 011.06 1.06L2.06 8l3.72 3.72a.75.75 0 11-1.06 1.06L.47 8.53a.75.75 0 010-1.06l4.25-4.25zm11.56 0a.75.75 0 10-1.06 1.06L18.94 8l-3.72 3.72a.75.75 0 101.06 1.06l4.25-4.25a.75.75 0 000-1.06l-4.25-4.25z" transform="translate(0, -6) scale(0.7)"/>`;
 	const iconDocs = `<path d="M0 1.75A.75.75 0 01.75 1h4.253c1.227 0 2.317.59 3 1.501A3.744 3.744 0 0111.006 1h4.245a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75h-4.507a2.25 2.25 0 00-1.591.659l-.622.621a.75.75 0 01-1.06 0l-.622-.621A2.25 2.25 0 005.258 13H.75a.75.75 0 01-.75-.75V1.75zm8.755 3a2.25 2.25 0 012.25-2.25H14.5v9h-3.757c-.71 0-1.4.201-1.992.572l.004-7.322zm-1.504 7.324l.004-5.073-.002-2.253A2.25 2.25 0 005.003 2.5H1.5v9h3.757a3.676 3.676 0 011.997.574z" transform="translate(0, -6) scale(0.7)"/>`;
 
+	const bgFillLight = transparent ? 'none' : '#ffffff';
+	const bgFillDark = transparent ? 'none' : '#0d1117';
+	const borderStrokeLight = '#e1e4e8';
+	const borderStrokeDark = '#30363d';
+
 	let content = repos
 		.map((repo, i) => {
 			const col = i % columns;
@@ -218,15 +224,15 @@ function generateCardSvg(repos, title) {
 
 			return `
       <g transform="translate(${x}, ${y})">
-        <rect width="${cardWidth}" height="${cardHeight}" rx="8" fill="#ffffff" stroke="#e1e4e8" class="card-bg" />
+        <rect width="${cardWidth}" height="${cardHeight}" rx="8" class="card-bg" />
         
         <image x="15" y="13" width="34" height="34" href="data:image/png;base64,${repo.base64}" clip-path="inset(0% round 50%)" />
         
-        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" fill="#0969da" class="repo-name">${escapeXml(
-					repo.name
-				)}</text>
+        <text x="60" y="24" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="600" font-size="14" class="repo-name">${escapeXml(
+				repo.name
+			)}</text>
 
-        <g transform="translate(60, 44)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" fill="#586069" class="stats-text">
+        <g transform="translate(60, 44)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" class="stats-text">
            
            <g transform="translate(0, 0)">
               ${typeIcon}
@@ -251,14 +257,14 @@ function generateCardSvg(repos, title) {
 	return `
     <svg width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .card-bg { fill: #ffffff; stroke: #e1e4e8; }
+        .card-bg { fill: ${bgFillLight}; stroke: ${borderStrokeLight}; stroke-width: 1.5; }
         .repo-name { fill: #0969da; }
         .stats-text { fill: #586069; }
         .title { fill: #08872B; }
         path { fill: #586069; }
         
         @media (prefers-color-scheme: dark) {
-          .card-bg { fill: #0d1117; stroke: #30363d; }
+          .card-bg { fill: ${bgFillDark}; stroke: ${borderStrokeDark}; }
           .repo-name { fill: #58a6ff; }
           .stats-text { fill: #8b949e; }
           path { fill: #8b949e; }
@@ -270,8 +276,8 @@ function generateCardSvg(repos, title) {
 
       <g transform="translate(25, 30)">
         <text class="title fade-in" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-weight="bold" font-size="22">${escapeXml(
-					title
-				)}</text>
+		title
+	)}</text>
       </g>
 
       ${content}
