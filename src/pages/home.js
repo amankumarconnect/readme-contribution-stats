@@ -1,5 +1,5 @@
 export async function renderHomePage(env) {
-	const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +26,6 @@ export async function renderHomePage(env) {
             --green-6: #116329;
             --blue-5: #0969da;
 
-            /* Dark Theme Mappings */
             --bg-body: #0d1117;
             --bg-container: #161b22;
             --text-primary: var(--gray-0);
@@ -42,7 +41,7 @@ export async function renderHomePage(env) {
             --btn-secondary-hover: #30363d;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             background-color: var(--bg-body);
             color: var(--text-primary);
             display: flex;
@@ -57,7 +56,7 @@ export async function renderHomePage(env) {
             padding: 40px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
             max-width: 600px;
             width: 100%;
             text-align: center;
@@ -121,7 +120,7 @@ export async function renderHomePage(env) {
         .code-block {
             background: var(--code-bg);
             padding: 15px;
-            padding-right: 70px; /* Space for copy button */
+            padding-right: 70px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             text-align: left;
@@ -132,7 +131,7 @@ export async function renderHomePage(env) {
         }
         .code-block pre {
             margin: 0;
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-family: monospace;
             font-size: 14px;
             color: var(--text-primary);
             white-space: pre-wrap;
@@ -150,7 +149,6 @@ export async function renderHomePage(env) {
             cursor: pointer;
             color: var(--text-primary);
             width: auto;
-            margin-top: 0;
         }
         .copy-btn:hover {
             background-color: var(--btn-secondary-hover);
@@ -177,11 +175,6 @@ export async function renderHomePage(env) {
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             text-decoration: none;
-            height: fit-content;
-        }
-        .stars-badge:hover {
-            background-color: var(--btn-secondary-hover);
-            text-decoration: none;
         }
         .stars-badge svg {
             margin-right: 5px;
@@ -201,7 +194,7 @@ export async function renderHomePage(env) {
         <div class="header">
             <h1>Readme Contribution Stats</h1>
             <a href="https://github.com/amankumarconnect/readme-contribution-stats" target="_blank" class="stars-badge">
-                <svg height="16" viewBox="0 0 16 16" version="1.1" width="16" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path></svg>
+                <svg height="16" viewBox="0 0 16 16" width="16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path></svg>
                 <span id="repo-stars">...</span>&nbsp;Stars
             </a>
         </div>
@@ -209,6 +202,10 @@ export async function renderHomePage(env) {
             <div class="input-group">
                 <label for="username">GitHub Username</label>
                 <input type="text" id="username" placeholder="e.g. amankumarconnect" required>
+            </div>
+            <div class="input-group">
+                <label for="repo">Specific Repo (Optional)</label>
+                <input type="text" id="repo" placeholder="e.g. owner/repo-name">
             </div>
             <div class="input-group">
                 <label for="limit">Limit (Max Repos)</label>
@@ -245,30 +242,36 @@ export async function renderHomePage(env) {
         const copyBtn = document.getElementById('copyBtn');
         const starPrompt = document.getElementById('starPrompt');
 
-        // Fetch stars client-side to avoid blocking page load and reduce server-side rate limiting
         fetch('https://api.github.com/repos/amankumarconnect/readme-contribution-stats')
             .then(res => res.json())
             .then(data => {
-                if (data.stargazers_count !== undefined) {
-                    document.getElementById('repo-stars').textContent = data.stargazers_count;
-                } else {
-                    document.getElementById('repo-stars').textContent = 'Unknown';
-                }
+                document.getElementById('repo-stars').textContent = data.stargazers_count || 'Unknown';
             })
-            .catch(e => {
-                console.error('Failed to fetch stars', e);
+            .catch(() => {
                 document.getElementById('repo-stars').textContent = 'Unknown';
             });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
+            const repo = document.getElementById('repo').value.trim();
             const limit = document.getElementById('limit').value;
             
             if (!username) return;
 
             const baseUrl = window.location.origin;
-            const imageUrl = \`\${baseUrl}/?type=repos&username=\${username}&limit=\${limit}\`;
+            const params = new URLSearchParams();
+            params.append('username', username);
+
+            if (repo) {
+                params.append('type', 'repo');
+                params.append('repo', repo);
+            } else {
+                params.append('type', 'repos');
+                params.append('limit', limit);
+            }
+
+            const imageUrl = \`\${baseUrl}/?\${params.toString()}\`;
             const markdown = \`[![Contribution Stats](\${imageUrl})](https://github.com/amankumarconnect/readme-contribution-stats)\`;
 
             previewImage.src = imageUrl;
@@ -280,23 +283,18 @@ export async function renderHomePage(env) {
         });
 
         copyBtn.addEventListener('click', () => {
-            const text = markdownCode.textContent;
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(markdownCode.textContent).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                }, 2000);
+                setTimeout(() => copyBtn.textContent = originalText, 2000);
             });
         });
     </script>
 </body>
 </html>
-	`;
+    `;
 
-	return new Response(html, {
-		headers: {
-			'Content-Type': 'text/html; charset=utf-8',
-		},
-	});
+    return new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
 }

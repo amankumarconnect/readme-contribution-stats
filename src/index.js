@@ -1,6 +1,7 @@
 import { fetchRepoCard } from './cards/repos.js';
 import { fetchDayCard } from './cards/day.js';
 import { fetchHourCard } from './cards/hour.js';
+import { fetchSingleRepoCard } from './cards/repo.js';
 import { makeErrorSvg, makeBadgeSvg } from './common/utils.js';
 import { renderHomePage } from './pages/home.js';
 
@@ -43,6 +44,9 @@ export default {
 
 			case 'day':
 				return await fetchDayCard(request, env);
+				
+			case 'repo':
+    			return await fetchSingleRepoCard(request, env);
 
 			case 'hour':
 				return await fetchHourCard(request, env);
