@@ -14,7 +14,7 @@ export async function fetchSingleRepoCard(request, env) {
 
 	let fullRepoPath = '';
 
-	
+	// Case 1: Full URL pasted (e.g., https://github.com/owner/repo)
 	if (repoParam.startsWith('http')) {
 		try {
 			const repoUrl = new URL(repoParam);
@@ -23,30 +23,34 @@ export async function fetchSingleRepoCard(request, env) {
 			fullRepoPath = repoParam;
 		}
 	}
-
+	// Case 2: Full path provided (e.g., owner/repo)
 	else if (repoParam.includes('/')) {
 		fullRepoPath = repoParam;
 	}
-	
+	// Case 3: Only repo name provided (e.g., Readlabels)
 	else {
 		fullRepoPath = `${username}/${repoParam}`;
 	}
 
+	// FIX 1: Only add Authorization header if the token actually exists
 	const headers = {
 		'User-Agent': 'readme-contribution-stats',
-		Authorization: `Bearer ${env.GITHUB_TOKEN}`,
 		Accept: 'application/vnd.github.v3+json',
 	};
+	if (env.GITHUB_TOKEN) {
+		headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+	}
 
 	try {
 		let repoData;
 
+		// 1. Fetch Repo Details
 		const repoRes = await fetch(`https://api.github.com/repos/${fullRepoPath}`, { headers });
 
 		if (repoRes.ok) {
 			repoData = await repoRes.json();
 		} else {
-			
+			// Fallback: Search for the repo if direct fetch fails
 			const q = `${repoParam} user:${username}`;
 			const searchRepoRes = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}`, { headers });
 
@@ -64,24 +68,34 @@ export async function fetchSingleRepoCard(request, env) {
 			}
 		}
 
-	
+		// 2. Fetch PR Count
 		const searchQuery = `is:pr is:merged is:public author:${username} repo:${fullRepoPath}`;
 		const searchRes = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(searchQuery)}`, { headers });
+		
+		// FIX 2: Check if search request was successful
+		if (!searchRes.ok) throw new Error(`PR search failed: ${searchRes.status}`);
+		
 		const searchPrData = await searchRes.json();
 		const prCount = searchPrData.total_count || 0;
 
-		
+		// 3. Fetch Avatar (SAFE METHOD)
 		const imgRes = await fetch(repoData.owner.avatar_url);
+		
+		// FIX 3: Check if image fetch was successful
+		if (!imgRes.ok) throw new Error(`Avatar fetch failed: ${imgRes.status}`);
+
 		const imgBuf = await imgRes.arrayBuffer();
 		
+		// Convert buffer to base64 in chunks
 		const u8 = new Uint8Array(imgBuf);
 		let binary = '';
-		const chunk = 0x8000;
+		const chunk = 0x8000; // 32KB chunks
 		for (let i = 0; i < u8.length; i += chunk) {
 			binary += String.fromCharCode.apply(null, u8.subarray(i, i + chunk));
 		}
 		const base64Avatar = btoa(binary);
 
+		// 4. Generate SVG
 		const svg = generateSingleRepoSvg({
 			name: repoData.name,
 			owner: repoData.owner.login,

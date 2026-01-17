@@ -62,7 +62,8 @@ export default {
 				});
 
 			default:
-				return new Response(makeErrorSvg('Invalid type parameter. Use ?type=repos, ?type=day, ?type=hour or ?type=stats'), {
+				
+				return new Response(makeErrorSvg('Invalid type parameter. Use ?type=repos, ?type=repo, ?type=day, ?type=hour or ?type=stats'), {
 					headers: { 'Content-Type': 'image/svg+xml' },
 				});
 		}

@@ -203,9 +203,9 @@ export async function renderHomePage(env) {
                 <label for="username">GitHub Username</label>
                 <input type="text" id="username" placeholder="e.g. amankumarconnect" required>
             </div>
-            <div class="input-group">
-                <label for="repo">Specific Repo (Optional)</label>
-                <input type="text" id="repo" placeholder="e.g. owner/repo-name">
+           <div class="input-group">
+             <label for="repo">Specific Repo (Optional)</label>
+              <input type="text" id="repo" placeholder="e.g. owner/repo-name or https://github.com/owner/repo">
             </div>
             <div class="input-group">
                 <label for="limit">Limit (Max Repos)</label>
