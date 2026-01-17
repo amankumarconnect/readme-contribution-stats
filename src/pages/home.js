@@ -1,263 +1,330 @@
 export async function renderHomePage(env) {
-    const html = `
+	const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Readme Contribution Stats</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338a169'%3E%3Cpath d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zM1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12z'/%3E%3Cpath d='M12 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 1.5a4 4 0 110-8 4 4 0 010 8z'/%3E%3Cpath d='M12 5a7 7 0 00-7 7h1.5a5.5 5.5 0 1111 0H19a7 7 0 00-7-7z'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zM1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12z'/%3E%3Cpath d='M12 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 1.5a4 4 0 110-8 4 4 0 010 8z'/%3E%3Cpath d='M12 5a7 7 0 00-7 7h1.5a5.5 5.5 0 1111 0H19a7 7 0 00-7-7z'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gray-0: #f6f8fa;
-            --gray-1: #eaeef2;
-            --gray-2: #d0d7de;
-            --gray-3: #afb8c1;
-            --gray-4: #8c959f;
-            --gray-5: #6e7781;
-            --gray-6: #57606a;
-            --gray-7: #424a53;
-            --gray-8: #32383f;
-            --gray-9: #24292f;
-            --black-0: #1f2328;
-            --white-0: #ffffff;
-            --green-4: #2da44e;
-            --green-5: #1a7f37;
-            --green-6: #116329;
-            --blue-5: #0969da;
-
-            --bg-body: #0d1117;
-            --bg-container: #161b22;
-            --text-primary: var(--gray-0);
-            --text-secondary: var(--gray-4);
-            --border-color: #30363d;
-            --input-bg: #0d1117;
-            --input-border: #30363d;
-            --btn-primary-bg: #238636;
-            --btn-primary-hover: #2ea043;
-            --code-bg: #161b22;
-            --btn-secondary-bg: #21262d;
-            --btn-secondary-border: #30363d;
-            --btn-secondary-hover: #30363d;
+            /* Brutalist Theme Palette */
+            --bg-sidebar: #0a0a0a;
+            --bg-main: #f0f0f0;
+            --text-sidebar: #e5e5e5;
+            --text-main: #171717;
+            --accent: #2563eb;
+            --border-sidebar: #333;
+            --border-main: #000;
+            --input-bg: #171717;
+            --input-focus: #fff;
+            --input-text-focus: #000;
+            --sidebar-width: 260px;
         }
+
+        * {
+            box-sizing: border-box;
+            border-radius: 0 !important;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: var(--bg-sidebar);
+            display: flex;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100%;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            background: var(--bg-main);
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            position: relative;
+            background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 10px 10px;
+            overflow: hidden;
+        }
+
+        .brand {
+            margin-bottom: 30px;
+        }
+
+        .brand h1 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 800;
             margin: 0;
-            padding: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            line-height: 1.2;
         }
-        .container {
-            background: var(--bg-container);
-            padding: 40px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
+
+        .brand h1 span {
+            color: var(--accent);
         }
-        h1 {
-            color: var(--text-primary);
-            margin-bottom: 20px;
+
+        .form-group {
+            margin-bottom: 16px;
         }
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
+
         label {
             display: block;
+            color: #888;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             margin-bottom: 5px;
             font-weight: 600;
-            color: var(--text-primary);
         }
-        input {
+
+        input, select {
             width: 100%;
-            padding: 8px 12px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--input-border);
-            color: var(--text-primary);
-            border-radius: 6px;
-            font-size: 16px;
-            box-sizing: border-box;
+            background: var(--bg-sidebar);
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s ease;
         }
-        input:focus {
-            border-color: var(--blue-5);
+
+        input:focus, select:focus {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.3);
         }
-        button {
-            background-color: var(--btn-primary-bg);
-            color: white;
-            border: 1px solid rgba(240, 246, 252, 0.1);
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
+
+        .generate-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
             width: 100%;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: var(--btn-primary-hover);
-        }
-        .preview {
-            margin-top: 30px;
-            display: none;
-        }
-        .preview h3 {
-            color: var(--text-primary);
-        }
-        .preview img {
-            max-width: 100%;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-        }
-        .code-block {
-            background: var(--code-bg);
-            padding: 15px;
-            padding-right: 70px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            text-align: left;
-            margin-top: 20px;
-            position: relative;
-            overflow-x: auto;
-            display: none;
-        }
-        .code-block pre {
-            margin: 0;
-            font-family: monospace;
-            font-size: 14px;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--btn-secondary-bg);
-            border: 1px solid var(--btn-secondary-border);
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 12px;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 0.75rem;
             cursor: pointer;
-            color: var(--text-primary);
-            width: auto;
+            border: 1px solid var(--accent);
+            margin-top: 10px;
+            transition: all 0.2s;
         }
-        .copy-btn:hover {
-            background-color: var(--btn-secondary-hover);
+
+        .generate-btn:hover {
+            background: transparent;
+            color: var(--accent);
         }
+
         .footer {
-            margin-top: 40px;
-            color: var(--text-secondary);
-            font-size: 14px;
+            margin-top: auto;
+            border-top: 1px solid #333;
+            padding-top: 12px;
+            color: #666;
+            font-size: 0.6rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .footer a {
+            color: #888;
+            text-decoration: none;
+            border-bottom: 1px solid #888;
+        }
+
+        .preview-box {
+            border: 2px solid #000;
+            background: #0d1117;
+            padding: 10px;
+            box-shadow: 6px 6px 0px #000;
+            max-width: 85%;
+            transition: transform 0.2s;
+            display: none;
+        }
+        
+        .preview-box.visible {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .preview-box img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border: none;
+        }
+
+        .code-bar {
+            margin-top: 0;
+            background: #000;
+            color: #fff;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            border-top: 2px solid #000;
+        }
+
+        .code-content {
+            padding: 8px 10px;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            text-transform: uppercase;
+            font-weight: 700;
+            cursor: pointer;
+            border-left: 2px solid #000;
+            margin-left: 2px;
+            transition: background 0.2s;
+            font-size: 0.7rem;
+        }
+
+        .copy-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .empty-state h2 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #000;
+            margin-bottom: 6px;
             text-align: center;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .stars-badge {
-            display: inline-flex;
-            align-items: center;
-            background: var(--btn-secondary-bg);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            text-decoration: none;
-        }
-        .stars-badge svg {
-            margin-right: 5px;
-            fill: var(--text-secondary);
-        }
-        a {
-            color: #58a6ff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+
+        @media (max-width: 800px) {
+            body {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Readme Contribution Stats</h1>
-            <a href="https://github.com/amankumarconnect/readme-contribution-stats" target="_blank" class="stars-badge">
-                <svg height="16" viewBox="0 0 16 16" width="16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path></svg>
-                <span id="repo-stars">...</span>&nbsp;Stars
-            </a>
-        </div>
-        <form id="statsForm">
-            <div class="input-group">
-                <label for="username">GitHub Username</label>
-                <input type="text" id="username" placeholder="e.g. amankumarconnect" required>
-            </div>
-           <div class="input-group">
-             <label for="repo">Specific Repo (Optional)</label>
-              <input type="text" id="repo" placeholder="e.g. owner/repo-name or https://github.com/owner/repo">
-            </div>
-            <div class="input-group">
-                <label for="limit">Limit (Max Repos)</label>
-                <input type="number" id="limit" value="6" min="1" max="20">
-            </div>
-            <button type="submit">Generate Card</button>
-        </form>
 
-        <div class="preview" id="preview">
-            <h3>Preview</h3>
-            <img id="previewImage" src="" alt="Contribution Stats">
+    <aside class="sidebar">
+        <div class="brand">
+            <h1>Readme<br><span>Contribution</span><br>Stats.</h1>
         </div>
 
-        <div class="code-block" id="codeBlock">
-            <button class="copy-btn" id="copyBtn">Copy</button>
-            <pre id="markdownCode"></pre>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="e.g. amankumarconnect" spellcheck="false">
         </div>
 
-        <p id="starPrompt" style="display: none; margin-top: 20px; font-size: 14px;">
-            <a href="https://github.com/amankumarconnect/readme-contribution-stats" target="_blank">If you find this tool useful, please consider starring the repository ⭐</a>
-        </p>
-    </div>
+        <div class="form-group">
+            <label>Specific Repo (Optional)</label>
+            <input type="text" id="repo" placeholder="e.g. owner/repo-name or https://github.com/owner/repo" spellcheck="false">
+        </div>
 
-    <div class="footer">
-        <p>Made with ❤️ by <a href="https://github.com/amankumarconnect" target="_blank">aman</a></p>
-    </div>
+        <div class="form-group" id="limit-group">
+            <label>Repo Limit</label>
+            <select id="limit">
+                <option value="4">4 Repositories</option>
+                <option value="6" selected>6 Repositories</option>
+                <option value="8">8 Repositories</option>
+                <option value="10">10 Repositories</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="sort-group">
+            <label>Sort Metric</label>
+            <select id="sort">
+                <option value="stars">Most Stars</option>
+                <option value="contributions">Most Contributions</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="exclude-group">
+            <label>Exclusions</label>
+            <input type="text" id="exclude" placeholder="repo1, owner/repo2">
+        </div>
+
+        <button id="generate-btn" class="generate-btn">GENERATE</button>
+
+        <div class="footer">
+            <p>2026 / <a href="https://github.com/amankumarconnect" target="_blank">Aman Kumar</a></p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="empty-state" id="empty-state">
+            <h2>WAITING FOR INPUT</h2>
+            <p>// Enter details and click Generate</p>
+        </div>
+
+        <div class="preview-box" id="preview-box">
+            <img id="preview-image" src="" alt="Stats Card">
+            <div class="code-bar">
+                <div class="code-content" id="markdown-code"></div>
+                <button class="copy-btn" id="copy-btn">COPY</button>
+            </div>
+        </div>
+    </main>
 
     <script>
-        const form = document.getElementById('statsForm');
-        const preview = document.getElementById('preview');
-        const previewImage = document.getElementById('previewImage');
-        const codeBlock = document.getElementById('codeBlock');
-        const markdownCode = document.getElementById('markdownCode');
-        const copyBtn = document.getElementById('copyBtn');
-        const starPrompt = document.getElementById('starPrompt');
+        const inputs = ['username', 'repo', 'limit', 'sort', 'exclude'];
+        const elements = {};
+        inputs.forEach(id => elements[id] = document.getElementById(id));
+        
+        const previewBox = document.getElementById('preview-box');
+        const emptyState = document.getElementById('empty-state');
+        const previewImage = document.getElementById('preview-image');
+        const markdownCode = document.getElementById('markdown-code');
+        const copyBtn = document.getElementById('copy-btn');
+        const generateBtn = document.getElementById('generate-btn');
 
-        fetch('https://api.github.com/repos/amankumarconnect/readme-contribution-stats')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('repo-stars').textContent = data.stargazers_count || 'Unknown';
-            })
-            .catch(() => {
-                document.getElementById('repo-stars').textContent = 'Unknown';
+        // Toggle UI visibility based on whether a specific repo is being generated
+        elements.repo.addEventListener('input', () => {
+            const isSingleRepo = elements.repo.value.trim() !== '';
+            ['limit-group', 'sort-group', 'exclude-group'].forEach(id => {
+                document.getElementById(id).style.opacity = isSingleRepo ? '0.4' : '1';
+                document.getElementById(id).style.pointerEvents = isSingleRepo ? 'none' : 'auto';
             });
+        });
 
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const repo = document.getElementById('repo').value.trim();
-            const limit = document.getElementById('limit').value;
-            
-            if (!username) return;
+        function generateUrl() {
+            const username = elements.username.value.trim();
+            const repo = elements.repo.value.trim();
+            if (!username) return null;
 
             const baseUrl = window.location.origin;
             const params = new URLSearchParams();
@@ -268,25 +335,53 @@ export async function renderHomePage(env) {
                 params.append('repo', repo);
             } else {
                 params.append('type', 'repos');
-                params.append('limit', limit);
+                params.append('limit', elements.limit.value);
+                
+                if (elements.sort.value !== 'stars') {
+                    params.append('sort', elements.sort.value);
+                }
+                
+                const exclude = elements.exclude.value.trim();
+                if (exclude) {
+                    params.append('exclude', exclude);
+                }
             }
 
-            const imageUrl = \`\${baseUrl}/?\${params.toString()}\`;
-            const markdown = \`[![Contribution Stats](\${imageUrl})](https://github.com/amankumarconnect/readme-contribution-stats)\`;
+            return \`\${baseUrl}/?\${params.toString()}&transparent=true&t=\${Date.now()}\`;
+        }
 
-            previewImage.src = imageUrl;
-            markdownCode.textContent = markdown;
+        function updatePreview() {
+            const url = generateUrl();
+            if (!url) return;
             
-            preview.style.display = 'block';
-            codeBlock.style.display = 'block';
-            starPrompt.style.display = 'block';
+            emptyState.style.display = 'none';
+            previewBox.classList.remove('visible');
+            setTimeout(() => {
+                previewBox.style.display = 'block';
+                const markdown = \`[![Contribution Stats](\${url})](https://github.com/amankumarconnect/readme-contribution-stats)\`;
+                previewImage.src = url;
+                markdownCode.textContent = markdown;
+                previewBox.classList.add('visible');
+            }, 10);
+        }
+
+        generateBtn.addEventListener('click', updatePreview);
+
+        inputs.forEach(id => {
+            elements[id].addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') updatePreview();
+            });
         });
 
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(markdownCode.textContent).then(() => {
                 const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => copyBtn.textContent = originalText, 2000);
+                copyBtn.textContent = 'COPIED';
+                copyBtn.style.background = '#10b981';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.background = '';
+                }, 2000);
             });
         });
     </script>
@@ -295,6 +390,8 @@ export async function renderHomePage(env) {
     `;
 
     return new Response(html, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+        },
     });
 }
