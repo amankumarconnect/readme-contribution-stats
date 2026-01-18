@@ -330,7 +330,7 @@ export async function renderHomePage(env) {
             const params = new URLSearchParams();
             params.append('username', username);
 
-            if (repo) {
+           if (repo) {
                 params.append('type', 'repo');
                 params.append('repo', repo);
             } else {
