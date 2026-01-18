@@ -1,6 +1,7 @@
 import { fetchRepoCard } from './cards/repos.js';
 import { fetchDayCard } from './cards/day.js';
 import { fetchHourCard } from './cards/hour.js';
+import { fetchSingleRepoCard } from './cards/repo.js';
 import { makeErrorSvg, makeBadgeSvg } from './common/utils.js';
 import { renderHomePage } from './pages/home.js';
 
@@ -43,6 +44,9 @@ export default {
 
 			case 'day':
 				return await fetchDayCard(request, env);
+				
+			case 'repo':
+    			return await fetchSingleRepoCard(request, env);
 
 			case 'hour':
 				return await fetchHourCard(request, env);
@@ -58,9 +62,9 @@ export default {
 				});
 
 			default:
-				return new Response(makeErrorSvg('Invalid type parameter. Use ?type=repos, ?type=day, ?type=hour or ?type=stats'), {
-					headers: { 'Content-Type': 'image/svg+xml' },
-				});
+				return new Response(makeErrorSvg('Invalid type parameter. Use ?type=repos, ?type=repo, ?type=day, ?type=hour or ?type=stats'), {
+                    headers: { 'Content-Type': 'image/svg+xml' },
+                });
 		}
 	},
 };

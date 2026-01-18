@@ -1,5 +1,5 @@
 export async function renderHomePage(env) {
-    const html = `
+	const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@ export async function renderHomePage(env) {
 
         * {
             box-sizing: border-box;
-            border-radius: 0 !important; /* STRICT NO ROUNDNESS */
+            border-radius: 0 !important;
         }
 
         body {
@@ -42,7 +42,6 @@ export async function renderHomePage(env) {
             display: flex;
         }
 
-        /* --- LAYOUT --- */
         .sidebar {
             width: var(--sidebar-width);
             height: 100%;
@@ -66,10 +65,9 @@ export async function renderHomePage(env) {
             background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px);
             background-size: 20px 20px;
             background-position: 10px 10px;
-            overflow: hidden; /* Prevent scroll */
+            overflow: hidden;
         }
 
-        /* --- SIDEBAR COMPONENTS --- */
         .brand {
             margin-bottom: 30px;
         }
@@ -155,7 +153,6 @@ export async function renderHomePage(env) {
             border-bottom: 1px solid #888;
         }
 
-        /* --- MAIN CONTENT PREVIEW --- */
         .preview-box {
             border: 2px solid #000;
             background: #0d1117;
@@ -175,7 +172,7 @@ export async function renderHomePage(env) {
             display: block;
             max-width: 100%;
             height: auto;
-            border: none; /* Removed white border */
+            border: none;
         }
 
         .code-bar {
@@ -206,8 +203,8 @@ export async function renderHomePage(env) {
             text-transform: uppercase;
             font-weight: 700;
             cursor: pointer;
-            border-left: 2px solid #000; /* Distinct divider */
-            margin-left: 2px; /* Small gap */
+            border-left: 2px solid #000;
+            margin-left: 2px;
             transition: background 0.2s;
             font-size: 0.7rem;
         }
@@ -221,7 +218,7 @@ export async function renderHomePage(env) {
             font-weight: 500;
             color: #000;
             margin-bottom: 6px;
-            text-align:center;
+            text-align: center;
         }
 
         @keyframes slideUp {
@@ -254,6 +251,11 @@ export async function renderHomePage(env) {
         </div>
 
         <div class="form-group">
+            <label>Specific Repo (Optional)</label>
+            <input type="text" id="repo" placeholder="e.g. owner/repo-name or https://github.com/owner/repo" spellcheck="false">
+        </div>
+
+        <div class="form-group" id="limit-group">
             <label>Repo Limit</label>
             <select id="limit">
                 <option value="4">4 Repositories</option>
@@ -263,7 +265,7 @@ export async function renderHomePage(env) {
             </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="sort-group">
             <label>Sort Metric</label>
             <select id="sort">
                 <option value="stars">Most Stars</option>
@@ -271,7 +273,7 @@ export async function renderHomePage(env) {
             </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="exclude-group">
             <label>Exclusions</label>
             <input type="text" id="exclude" placeholder="repo1, owner/repo2">
         </div>
@@ -299,7 +301,7 @@ export async function renderHomePage(env) {
     </main>
 
     <script>
-        const inputs = ['username', 'limit', 'sort', 'exclude'];
+        const inputs = ['username', 'repo', 'limit', 'sort', 'exclude'];
         const elements = {};
         inputs.forEach(id => elements[id] = document.getElementById(id));
         
@@ -310,24 +312,39 @@ export async function renderHomePage(env) {
         const copyBtn = document.getElementById('copy-btn');
         const generateBtn = document.getElementById('generate-btn');
 
+        // Toggle UI visibility based on whether a specific repo is being generated
+        elements.repo.addEventListener('input', () => {
+            const isSingleRepo = elements.repo.value.trim() !== '';
+            ['limit-group', 'sort-group', 'exclude-group'].forEach(id => {
+                document.getElementById(id).style.opacity = isSingleRepo ? '0.4' : '1';
+                document.getElementById(id).style.pointerEvents = isSingleRepo ? 'none' : 'auto';
+            });
+        });
+
         function generateUrl() {
             const username = elements.username.value.trim();
+            const repo = elements.repo.value.trim();
             if (!username) return null;
 
             const baseUrl = window.location.origin;
             const params = new URLSearchParams();
-            
-            params.append('type', 'repos');
             params.append('username', username);
-            params.append('limit', elements.limit.value);
-            
-            if (elements.sort.value !== 'stars') {
-                params.append('sort', elements.sort.value);
-            }
-            
-            const exclude = elements.exclude.value.trim();
-            if (exclude) {
-                params.append('exclude', exclude);
+
+           if (repo) {
+                params.append('type', 'repo');
+                params.append('repo', repo);
+            } else {
+                params.append('type', 'repos');
+                params.append('limit', elements.limit.value);
+                
+                if (elements.sort.value !== 'stars') {
+                    params.append('sort', elements.sort.value);
+                }
+                
+                const exclude = elements.exclude.value.trim();
+                if (exclude) {
+                    params.append('exclude', exclude);
+                }
             }
 
             return \`\${baseUrl}/?\${params.toString()}&transparent=true&t=\${Date.now()}\`;
@@ -335,9 +352,7 @@ export async function renderHomePage(env) {
 
         function updatePreview() {
             const url = generateUrl();
-            if (!url) {
-                return;
-            }
+            if (!url) return;
             
             emptyState.style.display = 'none';
             previewBox.classList.remove('visible');
@@ -359,21 +374,20 @@ export async function renderHomePage(env) {
         });
 
         copyBtn.addEventListener('click', () => {
-            const text = markdownCode.textContent;
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(markdownCode.textContent).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'COPIED';
-                copyBtn.style.background = '#10b981'; // Success Green
+                copyBtn.style.background = '#10b981';
                 setTimeout(() => {
                     copyBtn.textContent = originalText;
-                    copyBtn.style.background = ''; // Revert
+                    copyBtn.style.background = '';
                 }, 2000);
             });
         });
     </script>
 </body>
 </html>
-	`;
+    `;
 
     return new Response(html, {
         headers: {
