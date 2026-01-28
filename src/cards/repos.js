@@ -23,6 +23,10 @@ export async function fetchRepoCard(request, env) {
 	const excludeParam = url.searchParams.get('exclude');
 	const transparent = url.searchParams.get('transparent') === 'true';
 	const excludeList = excludeParam ? excludeParam.split(',').map(e => e.trim().toLowerCase()) : [];
+	
+	// Parse issue and PR filtering parameters
+	const showIssues = url.searchParams.get('issues') === 'true';
+	const showPRs = url.searchParams.get('prs') === 'true' || (!showIssues && !showPRs); // Default to PRs if neither specified
 
 	if (!username) {
 		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
@@ -42,51 +46,94 @@ export async function fetchRepoCard(request, env) {
 		Accept: 'application/vnd.github.v3+json',
 	};
 
-	const query = `is:pr is:merged is:public author:${username} -user:${username} sort:created-desc`;
-	const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
-
 	try {
-		const searchRes = await fetch(searchUrl, { headers });
-		if (!searchRes.ok) throw new Error(`GitHub API Error: ${searchRes.status}`);
-		const searchData = await searchRes.json();
-
 		const repoMap = new Map();
+		
+		// Fetch PRs if enabled
+		if (showPRs) {
+			const query = `is:pr is:merged is:public author:${username} -user:${username} sort:created-desc`;
+			const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
+			
+			const searchRes = await fetch(searchUrl, { headers });
+			if (!searchRes.ok) throw new Error(`GitHub API Error: ${searchRes.status}`);
+			const searchData = await searchRes.json();
 
-		for (const item of searchData.items) {
-			const repoUrl = item.repository_url;
-			// Safer parsing of repo URL
-			const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
-			const [owner, name] = repoFullName.split('/');
+			for (const item of searchData.items) {
+				const repoUrl = item.repository_url;
+				const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
+				const [owner, name] = repoFullName.split('/');
 
-			// Exclude if in excludeList (by name or fullName)
-			if (
-				excludeList.includes(name.toLowerCase()) ||
-				excludeList.includes(repoFullName.toLowerCase())
-			) continue;
+				// Exclude if in excludeList (by name or fullName)
+				if (
+					excludeList.includes(name.toLowerCase()) ||
+					excludeList.includes(repoFullName.toLowerCase())
+				) continue;
 
-			if (owner.toLowerCase() === username.toLowerCase()) continue;
+				if (owner.toLowerCase() === username.toLowerCase()) continue;
 
-			let type = 'Code';
-			const textToCheck = (item.title + (item.labels || []).map((l) => l.name).join(' ')).toLowerCase();
+				let type = 'Code';
+				const textToCheck = (item.title + (item.labels || []).map((l) => l.name).join(' ')).toLowerCase();
 
-			if (textToCheck.includes('doc') || textToCheck.includes('readme') || textToCheck.includes('typo') || textToCheck.includes('edit')) {
-				type = 'Docs';
+				if (textToCheck.includes('doc') || textToCheck.includes('readme') || textToCheck.includes('typo') || textToCheck.includes('edit')) {
+					type = 'Docs';
+				}
+
+				if (!repoMap.has(repoFullName)) {
+					repoMap.set(repoFullName, {
+						fullName: repoFullName,
+						name: name,
+						owner: owner,
+						apiUrl: repoUrl,
+						prCount: 1,
+						issueCount: 0,
+						types: new Set([type]),
+						ownerAvatar: `https://github.com/${owner}.png?size=64`,
+					});
+				} else {
+					const repo = repoMap.get(repoFullName);
+					repo.prCount += 1;
+					repo.types.add(type);
+				}
 			}
+		}
+		
+		// Fetch issues if enabled
+		if (showIssues) {
+			const query = `is:issue is:public author:${username} -user:${username} sort:created-desc`;
+			const searchUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=100`;
+			
+			const searchRes = await fetch(searchUrl, { headers });
+			if (!searchRes.ok) throw new Error(`GitHub API Error: ${searchRes.status}`);
+			const searchData = await searchRes.json();
 
-			if (!repoMap.has(repoFullName)) {
-				repoMap.set(repoFullName, {
-					fullName: repoFullName,
-					name: name,
-					owner: owner,
-					apiUrl: repoUrl,
-					prCount: 1,
-					types: new Set([type]),
-					ownerAvatar: `https://github.com/${owner}.png?size=64`,
-				});
-			} else {
-				const repo = repoMap.get(repoFullName);
-				repo.prCount += 1;
-				repo.types.add(type);
+			for (const item of searchData.items) {
+				const repoUrl = item.repository_url;
+				const repoFullName = new URL(repoUrl).pathname.split('/').slice(2).join('/');
+				const [owner, name] = repoFullName.split('/');
+
+				// Exclude if in excludeList
+				if (
+					excludeList.includes(name.toLowerCase()) ||
+					excludeList.includes(repoFullName.toLowerCase())
+				) continue;
+
+				if (owner.toLowerCase() === username.toLowerCase()) continue;
+
+				if (!repoMap.has(repoFullName)) {
+					repoMap.set(repoFullName, {
+						fullName: repoFullName,
+						name: name,
+						owner: owner,
+						apiUrl: repoUrl,
+						prCount: 0,
+						issueCount: 1,
+						types: new Set(),
+						ownerAvatar: `https://github.com/${owner}.png?size=64`,
+					});
+				} else {
+					const repo = repoMap.get(repoFullName);
+					repo.issueCount = (repo.issueCount || 0) + 1;
+				}
 			}
 		}
 
@@ -152,11 +199,15 @@ export async function fetchRepoCard(request, env) {
 				return b.stars - a.stars;
 			}
 			if (sort === 'contributions') {
-				return b.prCount - a.prCount;
+				const aTotal = a.prCount + a.issueCount;
+				const bTotal = b.prCount + b.issueCount;
+				return bTotal - aTotal;
 			}
 			const starDiff = b.stars - a.stars;
 			if (starDiff !== 0) return starDiff;
-			return b.prCount - a.prCount;
+			const aTotal = a.prCount + a.issueCount;
+			const bTotal = b.prCount + b.issueCount;
+			return bTotal - aTotal;
 		});
 
 		enrichedRepos = enrichedRepos.slice(0, limit);
@@ -179,7 +230,7 @@ export async function fetchRepoCard(request, env) {
 			return new Response(makeErrorSvg('No external contributions found'), { headers: { 'Content-Type': 'image/svg+xml' } });
 		}
 
-		const svg = generateCardSvg(enrichedRepos, title, transparent);
+		const svg = generateCardSvg(enrichedRepos, title, transparent, showPRs, showIssues);
 
 		return new Response(svg, {
 			headers: {
@@ -192,7 +243,7 @@ export async function fetchRepoCard(request, env) {
 	}
 }
 
-function generateCardSvg(repos, title, transparent) {
+function generateCardSvg(repos, title, transparent, showPRs, showIssues) {
 	const cardWidth = 400;
 	const cardHeight = 60;
 	const gap = 15;
@@ -206,6 +257,8 @@ function generateCardSvg(repos, title, transparent) {
 
 	const iconCode = `<path d="M4.72 3.22a.75.75 0 011.06 1.06L2.06 8l3.72 3.72a.75.75 0 11-1.06 1.06L.47 8.53a.75.75 0 010-1.06l4.25-4.25zm11.56 0a.75.75 0 10-1.06 1.06L18.94 8l-3.72 3.72a.75.75 0 101.06 1.06l4.25-4.25a.75.75 0 000-1.06l-4.25-4.25z" transform="translate(0, -6) scale(0.7)"/>`;
 	const iconDocs = `<path d="M0 1.75A.75.75 0 01.75 1h4.253c1.227 0 2.317.59 3 1.501A3.744 3.744 0 0111.006 1h4.245a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75h-4.507a2.25 2.25 0 00-1.591.659l-.622.621a.75.75 0 01-1.06 0l-.622-.621A2.25 2.25 0 005.258 13H.75a.75.75 0 01-.75-.75V1.75zm8.755 3a2.25 2.25 0 012.25-2.25H14.5v9h-3.757c-.71 0-1.4.201-1.992.572l.004-7.322zm-1.504 7.324l.004-5.073-.002-2.253A2.25 2.25 0 005.003 2.5H1.5v9h3.757a3.676 3.676 0 011.997.574z" transform="translate(0, -6) scale(0.7)"/>`;
+	const iconIssue = `<path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z M8 0a8 8 0 110 16A8 8 0 018 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" transform="translate(0, -6) scale(0.7)" fill="#8b949e"/>`;
+	const iconPR = `<path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.25 2.25 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.25 2.25 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z" transform="translate(0, -6) scale(0.6)"/>`;
 
 	const bgFillLight = transparent ? 'none' : '#ffffff';
 	const bgFillDark = transparent ? 'none' : '#0d1117';
@@ -221,6 +274,29 @@ function generateCardSvg(repos, title, transparent) {
 
 			let typeIcon = iconCode;
 			if (repo.contributionType === 'Docs') typeIcon = iconDocs;
+			
+			// Build contribution stats display
+			let contributionStats = '';
+			let statsOffset = 100;
+			
+			// Show PR count if PRs are enabled and count > 0
+			if (showPRs && repo.prCount > 0) {
+				contributionStats += `
+				<g transform="translate(${statsOffset}, 0)">
+					${iconPR}
+					<text x="14" y="0" dominant-baseline="middle">${repo.prCount} PR${repo.prCount !== 1 ? 's' : ''}</text>
+				</g>`;
+				statsOffset += 70;
+			}
+			
+			// Show issue count if issues are enabled and count > 0
+			if (showIssues && repo.issueCount > 0) {
+				contributionStats += `
+				<g transform="translate(${statsOffset}, 0)">
+					${iconIssue}
+					<text x="14" y="0" dominant-baseline="middle">${repo.issueCount} issue${repo.issueCount !== 1 ? 's' : ''}</text>
+				</g>`;
+			}
 
 			return `
       <g transform="translate(${x}, ${y})">
@@ -234,19 +310,17 @@ function generateCardSvg(repos, title, transparent) {
 
         <g transform="translate(60, 44)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" class="stats-text">
            
-           <g transform="translate(0, 0)">
+           ${repo.contributionType ? `<g transform="translate(0, 0)">
               ${typeIcon}
               <text x="16" y="0" dominant-baseline="middle">${escapeXml(repo.contributionType)}</text>
-           </g>
+           </g>` : ''}
 
-           <g transform="translate(100, 0)">
+           <g transform="translate(${repo.contributionType ? '100' : '0'}, 0)">
               <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.719-4.192-3.046-2.97a.75.75 0 01.416-1.28l4.21-.612L7.327.668A.75.75 0 018 .25z" 
                 transform="translate(0, -6) scale(0.7)"/>
               <text x="14" y="0" dominant-baseline="middle">${kFormatter(repo.stars)}</text>
               
-              <path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.25 2.25 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.25 2.25 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z" 
-                transform="translate(65, -6) scale(0.6)"/>
-              <text x="80" y="0" dominant-baseline="middle">${repo.prCount} merged</text>
+              ${contributionStats}
            </g>
         </g>
       </g>
