@@ -26,7 +26,8 @@ export async function fetchRepoCard(request, env) {
 	
 	// Parse issue and PR filtering parameters
 	const showIssues = url.searchParams.get('issues') === 'true';
-	const showPRs = url.searchParams.get('prs') === 'true' || (!showIssues && !showPRs); // Default to PRs if neither specified
+	const showPRsParam = url.searchParams.get('prs') === 'true';
+	const showPRs = showPRsParam || (!showIssues && !showPRsParam);
 
 	if (!username) {
 		return new Response(makeErrorSvg('Missing parameter: ?type=repos&username=yourname&limit=6'), {
