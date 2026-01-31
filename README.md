@@ -42,6 +42,8 @@ Example usage:
 [![Contribution Stats](https://readme-contribution-stats.aman-kumar-connect.workers.dev/?type=repos&username=YOUR_USERNAME&limit=6&prs=true&issues=true&sort=contributions&exclude=repo1,repo2)](https://github.com/amankumarconnect/readme-contribution-stats)
 ```
 
+> More features and cards are coming soon! Please star the repo ⭐
+
 ## ❓ FAQ & Common Mistakes
 
 ### 📌 FAQ
@@ -70,8 +72,6 @@ This tool is primarily designed for individual GitHub user profiles.
 - Confusing different `type` values (e.g., `stats` vs `repos`)
 - Expecting private repository data to appear
 - Assuming stats update immediately after new commits or PRs
-
-More features and cards are coming soon! Please star the repo ⭐
 
 ## Contributing
 
