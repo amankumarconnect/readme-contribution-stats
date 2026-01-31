@@ -42,8 +42,38 @@ Example usage:
 [![Contribution Stats](https://readme-contribution-stats.aman-kumar-connect.workers.dev/?type=repos&username=YOUR_USERNAME&limit=6&prs=true&issues=true&sort=contributions&exclude=repo1,repo2)](https://github.com/amankumarconnect/readme-contribution-stats)
 ```
 
-More features and cards are coming soon! Please star the repo ⭐
+> More features and cards are coming soon! Please star the repo ⭐
+
+## ❓ FAQ & Common Mistakes
+
+### 📌 FAQ
+
+**Does this project use the GitHub API?**  
+Yes. The stats are generated using publicly available GitHub data via the GitHub API.
+
+**Is authentication required?**  
+No authentication is required. However, unauthenticated requests may be subject to GitHub rate limits.
+
+**Does this support private repositories?**  
+No. Only public repositories and public contributions are supported.
+
+**How often do the stats update?**  
+The stats update based on GitHub’s API cache and may not reflect real-time changes instantly.
+
+**Can this be used for organization accounts?**  
+This tool is primarily designed for individual GitHub user profiles.
+
+---
+
+### ⚠️ Common Mistakes
+
+- Using an invalid or misspelled `username`
+- Setting very large values for `limit`, which may result in empty or slow responses
+- Confusing different `type` values (e.g., `stats` vs `repos`)
+- Expecting private repository data to appear
+- Assuming stats update immediately after new commits or PRs
 
 ## Contributing
 
 Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) first.
+
