@@ -269,7 +269,7 @@ export async function renderHomePage(env) {
         <div class="form-group hidden" id="repo-group">
             <label for="repo">Specific Repo</label>
             <input type="text" id="repo" placeholder="e.g. facebook/react" spellcheck="false">
-            <small class="text-muted">Please format as 'owner/repo-name'</small> 
+            <small style="color: #cccccc;">Please format as 'owner/repo-name'</small>
         </div>
 
         <div class="form-group" id="limit-group">
@@ -400,7 +400,7 @@ export async function renderHomePage(env) {
             }
             else if (type === 'hour') {
                  // Automatically detect user timezone offset (in hours)
-                 const offset = new Date().getTimezoneOffset() / -60;
+                 const offset = new Date().getTimezoneOffset();
                  params.append('offset', offset);
             }
             // 'day' type only needs username, which is already added
