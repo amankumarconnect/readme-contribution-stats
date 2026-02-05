@@ -1,5 +1,5 @@
 export async function renderHomePage(env) {
-	const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,6 +88,12 @@ export async function renderHomePage(env) {
 
         .form-group {
             margin-bottom: 16px;
+            transition: opacity 0.3s ease, height 0.3s ease;
+        }
+
+        /* Utility class to hide elements smoothly */
+        .hidden {
+            display: none;
         }
 
         label {
@@ -251,8 +257,18 @@ export async function renderHomePage(env) {
         </div>
 
         <div class="form-group">
-            <label>Specific Repo (Optional)</label>
-            <input type="text" id="repo" placeholder="e.g. owner/repo-name or https://github.com/owner/repo" spellcheck="false">
+            <label>Card Type</label>
+            <select id="type">
+                <option value="repos" selected>Repository Stats</option>
+                <option value="repo">Single Repository</option>
+                <option value="day">Contribution Days</option>
+                <option value="hour">Commits by Hour</option>
+            </select>
+        </div>
+
+        <div class="form-group hidden" id="repo-group">
+            <label>Specific Repo</label>
+            <input type="text" id="repo" placeholder="e.g. owner/repo-name" spellcheck="false">
         </div>
 
         <div class="form-group" id="limit-group">
@@ -301,10 +317,19 @@ export async function renderHomePage(env) {
     </main>
 
     <script>
-        const inputs = ['username', 'repo', 'limit', 'sort', 'exclude'];
+        // Updated inputs list to include the new 'type' dropdown
+        const inputs = ['username', 'type', 'repo', 'limit', 'sort', 'exclude'];
         const elements = {};
         inputs.forEach(id => elements[id] = document.getElementById(id));
         
+        // Groups for toggling visibility
+        const groups = {
+            repo: document.getElementById('repo-group'),
+            limit: document.getElementById('limit-group'),
+            sort: document.getElementById('sort-group'),
+            exclude: document.getElementById('exclude-group')
+        };
+
         const previewBox = document.getElementById('preview-box');
         const emptyState = document.getElementById('empty-state');
         const previewImage = document.getElementById('preview-image');
@@ -312,29 +337,51 @@ export async function renderHomePage(env) {
         const copyBtn = document.getElementById('copy-btn');
         const generateBtn = document.getElementById('generate-btn');
 
-        // Toggle UI visibility based on whether a specific repo is being generated
-        elements.repo.addEventListener('input', () => {
-            const isSingleRepo = elements.repo.value.trim() !== '';
-            ['limit-group', 'sort-group', 'exclude-group'].forEach(id => {
-                document.getElementById(id).style.opacity = isSingleRepo ? '0.4' : '1';
-                document.getElementById(id).style.pointerEvents = isSingleRepo ? 'none' : 'auto';
-            });
-        });
+        // Logic to update UI based on selected Card Type
+        function updateUIState() {
+            const type = elements.type.value;
+
+            // Reset all to hidden first
+            groups.repo.classList.add('hidden');
+            groups.limit.classList.add('hidden');
+            groups.sort.classList.add('hidden');
+            groups.exclude.classList.add('hidden');
+
+            if (type === 'repos') {
+                // Show Repository Stats options
+                groups.limit.classList.remove('hidden');
+                groups.sort.classList.remove('hidden');
+                groups.exclude.classList.remove('hidden');
+            } else if (type === 'repo') {
+                // Show Single Repo options
+                groups.repo.classList.remove('hidden');
+            } else {
+                // 'day' and 'hour' types require no extra inputs, just username
+            }
+        }
+
+        // Listen for changes on the Type dropdown
+        elements.type.addEventListener('change', updateUIState);
+
+        // Initial UI state setup
+        updateUIState();
 
         function generateUrl() {
             const username = elements.username.value.trim();
-            const repo = elements.repo.value.trim();
             if (!username) return null;
 
+            const type = elements.type.value;
             const baseUrl = window.location.origin;
             const params = new URLSearchParams();
+            
             params.append('username', username);
+            params.append('type', type); // Now explicitly setting type
 
-           if (repo) {
-                params.append('type', 'repo');
-                params.append('repo', repo);
-            } else {
-                params.append('type', 'repos');
+            if (type === 'repo') {
+                const repo = elements.repo.value.trim();
+                if (repo) params.append('repo', repo);
+            } 
+            else if (type === 'repos') {
                 params.append('limit', elements.limit.value);
                 
                 if (elements.sort.value !== 'stars') {
@@ -346,6 +393,12 @@ export async function renderHomePage(env) {
                     params.append('exclude', exclude);
                 }
             }
+            else if (type === 'hour') {
+                 // Automatically detect user timezone offset (in hours)
+                 const offset = new Date().getTimezoneOffset() / -60;
+                 params.append('offset', offset);
+            }
+            // 'day' type only needs username, which is already added
 
             return \`\${baseUrl}/?\${params.toString()}&transparent=true&t=\${Date.now()}\`;
         }
@@ -368,9 +421,11 @@ export async function renderHomePage(env) {
         generateBtn.addEventListener('click', updatePreview);
 
         inputs.forEach(id => {
-            elements[id].addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') updatePreview();
-            });
+            if (elements[id]) {
+                elements[id].addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') updatePreview();
+                });
+            }
         });
 
         copyBtn.addEventListener('click', () => {
