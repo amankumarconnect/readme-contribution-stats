@@ -267,8 +267,9 @@ export async function renderHomePage(env) {
         </div>
 
         <div class="form-group hidden" id="repo-group">
-            <label>Specific Repo</label>
-            <input type="text" id="repo" placeholder="e.g. owner/repo-name" spellcheck="false">
+            <label for="repo">Specific Repo</label>
+            <input type="text" id="repo" placeholder="e.g. facebook/react" spellcheck="false">
+            <small class="text-muted">Please format as 'owner/repo-name'</small> 
         </div>
 
         <div class="form-group" id="limit-group">
@@ -379,8 +380,12 @@ export async function renderHomePage(env) {
 
             if (type === 'repo') {
                 const repo = elements.repo.value.trim();
-                if (repo) params.append('repo', repo);
-            } 
+                if (!repo) {
+                    alert("Please enter a repository name (e.g., owner/repo).");
+                    return; 
+                }
+                params.append('repo', repo);
+            }
             else if (type === 'repos') {
                 params.append('limit', elements.limit.value);
                 
